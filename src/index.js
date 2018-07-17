@@ -373,7 +373,7 @@ var patchElement = function(
   return (nextNode.element = element)
 }
 
-export const createVNode = function(name, props, children, element, key, type) {
+export var createVNode = function(name, props, children, element, key, type) {
   return {
     name: name,
     props: props,
@@ -384,7 +384,7 @@ export const createVNode = function(name, props, children, element, key, type) {
   }
 }
 
-export const createTextVNode = function(text, element) {
+export var createTextVNode = function(text, element) {
   return createVNode(text, EMPTY_OBJECT, EMPTY_ARRAY, element, null, TEXT_NODE)
 }
 
