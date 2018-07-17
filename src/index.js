@@ -81,7 +81,7 @@ var updateProperty = function(element, name, lastValue, nextValue, isSvg) {
   }
 }
 
-var createElement = function(node, lifecycle, isSvg) {
+var createElement = function(document, node, lifecycle, isSvg) {
   var element =
     node.type === TEXT_NODE
       ? document.createTextNode(node.name)
@@ -89,6 +89,7 @@ var createElement = function(node, lifecycle, isSvg) {
         ? document.createElementNS(SVG_NS, node.name)
         : document.createElement(node.name)
 
+  // console.log(`createElement! node: ${JSON.stringify(node)}`);
   var props = node.props
   if (props.oncreate) {
     lifecycle.push(function() {
@@ -97,7 +98,7 @@ var createElement = function(node, lifecycle, isSvg) {
   }
 
   for (var i = 0, length = node.children.length; i < length; i++) {
-    element.appendChild(createElement(node.children[i], lifecycle, isSvg))
+    element.appendChild(createElement(document, node.children[i], lifecycle, isSvg))
   }
 
   for (var name in props) {
@@ -178,6 +179,7 @@ var createKeyMap = function(children, start, end) {
 }
 
 var patchElement = function(
+  document,
   parent,
   element,
   lastNode,
@@ -196,7 +198,7 @@ var patchElement = function(
     }
   } else if (lastNode == null || lastNode.name !== nextNode.name) {
     var newElement = parent.insertBefore(
-      createElement(nextNode, lifecycle, isSvg),
+      createElement(document, nextNode, lifecycle, isSvg),
       element
     )
 
@@ -233,6 +235,7 @@ var patchElement = function(
       if (lastKey == null || lastKey !== nextKey) break
 
       patchElement(
+        document,
         element,
         lastChildren[lastChStart].element,
         lastChildren[lastChStart],
@@ -252,6 +255,7 @@ var patchElement = function(
       if (lastKey == null || lastKey !== nextKey) break
 
       patchElement(
+        document,
         element,
         lastChildren[lastChEnd].element,
         lastChildren[lastChEnd],
@@ -267,7 +271,7 @@ var patchElement = function(
     if (lastChStart > lastChEnd) {
       while (nextChStart <= nextChEnd) {
         element.insertBefore(
-          createElement(nextChildren[nextChStart++], lifecycle, isSvg),
+          createElement(document, nextChildren[nextChStart++], lifecycle, isSvg),
           (childNode = lastChildren[lastChStart]) && childNode.element
         )
       }
@@ -297,6 +301,7 @@ var patchElement = function(
         if (nextKey == null || lastNode.type === RECYCLED_NODE) {
           if (lastKey == null) {
             patchElement(
+              document,
               element,
               childNode && childNode.element,
               childNode,
@@ -310,6 +315,7 @@ var patchElement = function(
         } else {
           if (lastKey === nextKey) {
             patchElement(
+              document,
               element,
               childNode.element,
               childNode,
@@ -322,6 +328,7 @@ var patchElement = function(
           } else {
             if ((savedNode = lastKeyed[nextKey]) != null) {
               patchElement(
+                document,
                 element,
                 element.insertBefore(
                   savedNode.element,
@@ -335,6 +342,7 @@ var patchElement = function(
               nextKeyed[nextKey] = true
             } else {
               patchElement(
+                document,
                 element,
                 childNode && childNode.element,
                 null,
@@ -365,7 +373,7 @@ var patchElement = function(
   return (nextNode.element = element)
 }
 
-var createVNode = function(name, props, children, element, key, type) {
+export const createVNode = function(name, props, children, element, key, type) {
   return {
     name: name,
     props: props,
@@ -376,7 +384,7 @@ var createVNode = function(name, props, children, element, key, type) {
   }
 }
 
-var createTextVNode = function(text, element) {
+export const createTextVNode = function(text, element) {
   return createVNode(text, EMPTY_OBJECT, EMPTY_ARRAY, element, null, TEXT_NODE)
 }
 
@@ -401,10 +409,10 @@ export var recycle = function(container) {
   return recycleElement(container.children[0])
 }
 
-export var patch = function(lastNode, nextNode, container) {
+export var patch = function(lastNode, nextNode, container, doc) {
   var lifecycle = []
 
-  patchElement(container, container.children[0], lastNode, nextNode, lifecycle)
+  patchElement(doc || document, container, container.children[0], lastNode, nextNode, lifecycle)
 
   while (lifecycle.length > 0) lifecycle.pop()()
 

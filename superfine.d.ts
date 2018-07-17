@@ -37,7 +37,8 @@ export function h<Props>(
 export function patch(
   lastNode: VNode,
   nextNode: VNode,
-  container: Element
+  container: Element,
+  document: Document
 ): VNode
 
 declare global {
